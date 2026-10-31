@@ -1,0 +1,13 @@
+# SAMPLE: Synthetic page access trace for Exp 10 replacement algorithms
+7
+0
+1
+2
+0
+3
+0
+4
+2
+3
+0
+3
