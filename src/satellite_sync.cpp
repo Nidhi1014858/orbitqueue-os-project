@@ -17,7 +17,7 @@
 
 namespace {
 
-// Thread-safe console logging
+// Thread-safe console logging for safe mode
 std::mutex g_log_mutex;
 
 void safe_log(const std::string& msg) {
@@ -29,6 +29,7 @@ struct Config {
     std::string demo = "pc";
     std::string mode = "safe";
     std::string csv_path = "data/satellite_data.csv";
+    int iterations = 200000;
     int producer_delay_ms = 0;
     int consumer_delay_ms = 0;
 };
@@ -39,6 +40,7 @@ void print_usage(const char* prog) {
               << "  --demo=pc|rw             Demo mode: 'pc' (producer-consumer, default), 'rw' (reader-writer)\n"
               << "  --mode=safe|unsafe       Synchronization mode: 'safe' (default), 'unsafe'\n"
               << "  --csv PATH               Path to input packets CSV (default: data/satellite_data.csv)\n"
+              << "  --iterations N           Iterations for unsafe mode (default: 200000)\n"
               << "  --producer-delay-ms N    Delay after each produce in ms (default: 0)\n"
               << "  --consumer-delay-ms N    Delay after each consume in ms (default: 0)\n"
               << "  --help                   Show this help message\n";
@@ -52,6 +54,19 @@ bool parse_non_negative_int(const std::string& str, int& out) {
     try {
         out = std::stoi(str);
         return out >= 0;
+    } catch (...) {
+        return false;
+    }
+}
+
+bool parse_positive_int(const std::string& str, int& out) {
+    if (str.empty()) return false;
+    for (char c : str) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) return false;
+    }
+    try {
+        out = std::stoi(str);
+        return out > 0;
     } catch (...) {
         return false;
     }
@@ -75,6 +90,18 @@ bool parse_arguments(int argc, char* argv[], Config& cfg) {
             cfg.csv_path = arg.substr(6);
         } else if (arg == "--csv" && i + 1 < argc) {
             cfg.csv_path = argv[++i];
+        } else if (arg.rfind("--iterations=", 0) == 0) {
+            if (!parse_positive_int(arg.substr(13), cfg.iterations)) {
+                std::cerr << "Error: invalid --iterations value: " << arg.substr(13)
+                          << " (must be a positive integer)\n";
+                return false;
+            }
+        } else if (arg == "--iterations" && i + 1 < argc) {
+            if (!parse_positive_int(argv[++i], cfg.iterations)) {
+                std::cerr << "Error: invalid --iterations value: " << argv[i]
+                          << " (must be a positive integer)\n";
+                return false;
+            }
         } else if (arg.rfind("--producer-delay-ms=", 0) == 0) {
             if (!parse_non_negative_int(arg.substr(20), cfg.producer_delay_ms)) {
                 std::cerr << "Error: invalid --producer-delay-ms value: " << arg.substr(20) << "\n";
@@ -102,6 +129,10 @@ bool parse_arguments(int argc, char* argv[], Config& cfg) {
     }
     return true;
 }
+
+// ============================================================================
+// Safe Producer-Consumer Implementation (Part A2)
+// ============================================================================
 
 // TelemetryProducer: handles critical streams (TT&C and HOUSEKEEPING)
 void telemetry_producer(PacketQueue& queue,
@@ -192,34 +223,7 @@ void router_consumer(PacketQueue& queue,
     }
 }
 
-} // namespace
-
-int main(int argc, char* argv[]) {
-    Config cfg;
-    if (!parse_arguments(argc, argv, cfg)) {
-        print_usage(argv[0]);
-        return 1;
-    }
-
-    // Check for modes not yet implemented in Part A2
-    if (cfg.demo == "rw") {
-        std::cout << "[STUB] Reader-Writer demo (--demo=rw) is not implemented yet (owner: Nidhi)\n";
-        return 77;
-    }
-    if (cfg.demo != "pc") {
-        std::cerr << "Error: invalid --demo mode '" << cfg.demo << "'. Expected 'pc' or 'rw'.\n";
-        return 1;
-    }
-
-    if (cfg.mode == "unsafe") {
-        std::cout << "[STUB] Unsafe comparison mode (--mode=unsafe) is not implemented yet (owner: Nidhi)\n";
-        return 77;
-    }
-    if (cfg.mode != "safe") {
-        std::cerr << "Error: invalid --mode '" << cfg.mode << "'. Expected 'safe' or 'unsafe'.\n";
-        return 1;
-    }
-
+int run_safe_demo(const Config& cfg) {
     // Load input packets from CSV
     std::vector<Packet> all_packets;
     int rejected_count = 0;
@@ -254,7 +258,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::cout << "=== SomaiyaSat Downlink Synchronization (Exp 7) ===\n"
+    std::cout << "=== SomaiyaSat Downlink Synchronization (Exp 7 - Safe Mode) ===\n"
               << "Loaded " << all_packets.size() << " valid packets from " << cfg.csv_path << "\n"
               << "TelemetryProducer stream: " << telemetry_packets.size() << " packets (TT&C, HOUSEKEEPING)\n"
               << "PayloadProducer stream:   " << payload_packets.size() << " packets (SSTV, VOICE)\n"
@@ -377,4 +381,160 @@ int main(int argc, char* argv[]) {
         std::cout << "AUDIT FAIL\n";
         return 2;
     }
+}
+
+// ============================================================================
+// Unsafe Producer-Consumer Implementation (Part A3 - DEMONSTRATION ONLY)
+// Uses NO mutexes, NO semaphores, and NO atomics to expose race conditions.
+// Uses modulo indexing to avoid out-of-bounds memory corruption.
+// ============================================================================
+
+struct UnsafeQueue {
+    static constexpr size_t CAPACITY = 8;
+    int buffer[CAPACITY] = {0};
+    int in = 0;
+    int out = 0;
+
+    void push(int id) {
+        buffer[in % CAPACITY] = id;
+        in = (in + 1) % CAPACITY;
+    }
+
+    int pop() {
+        int val = buffer[out % CAPACITY];
+        out = (out + 1) % CAPACITY;
+        return val;
+    }
+};
+
+void unsafe_producer_1(UnsafeQueue& q, int start, int end) {
+    for (int id = start; id <= end; ++id) {
+        q.push(id);
+        if ((id & 0x1FF) == 0) {
+            std::this_thread::yield();
+        }
+    }
+}
+
+void unsafe_producer_2(UnsafeQueue& q, int start, int end) {
+    for (int id = start; id <= end; ++id) {
+        q.push(id);
+        if ((id & 0x1FF) == 0) {
+            std::this_thread::yield();
+        }
+    }
+}
+
+void unsafe_consumer(UnsafeQueue& q, int total_records, std::vector<int>& consumed) {
+    for (int i = 0; i < total_records; ++i) {
+        consumed[i] = q.pop();
+        if ((i & 0x1FF) == 0) {
+            std::this_thread::yield();
+        }
+    }
+}
+
+int run_unsafe_demo(int iterations) {
+    std::cout << "=== DEMONSTRATION ONLY: Unsafe Concurrent Producer-Consumer ===\n"
+              << "WARNING: Running with NO mutex and NO semaphores.\n"
+              << "WARNING: Intentional data races are present; results may vary between runs.\n"
+              << "Iterations: " << iterations << "\n"
+              << "--------------------------------------------------------------\n";
+
+    UnsafeQueue q;
+    std::vector<int> consumed(iterations, 0);
+
+    int half = iterations / 2;
+    std::thread t1(unsafe_producer_1, std::ref(q), 1, half);
+    std::thread t2(unsafe_producer_2, std::ref(q), half + 1, iterations);
+    std::thread tc(unsafe_consumer, std::ref(q), iterations, std::ref(consumed));
+
+    t1.join();
+    t2.join();
+    tc.join();
+
+    // Analyze unsafe run results
+    int invalid_ids = 0;
+    std::vector<int> freq(iterations + 1, 0);
+
+    for (int val : consumed) {
+        if (val < 1 || val > iterations) {
+            invalid_ids++;
+        } else {
+            freq[val]++;
+        }
+    }
+
+    int unique_consumed_ids = 0;
+    int duplicate_ids = 0;
+    int duplicate_instances = 0;
+    int missing_ids = 0;
+
+    for (int id = 1; id <= iterations; ++id) {
+        if (freq[id] == 0) {
+            missing_ids++;
+        } else {
+            unique_consumed_ids++;
+            if (freq[id] > 1) {
+                duplicate_ids++;
+                duplicate_instances += (freq[id] - 1);
+            }
+        }
+    }
+
+    bool count_mismatch = (consumed.size() != static_cast<size_t>(iterations)) ||
+                          (unique_consumed_ids != iterations);
+
+    std::cout << "--- Unsafe Execution Statistics ---\n"
+              << "Produced attempts:        " << iterations << "\n"
+              << "Consumed records:         " << consumed.size() << "\n"
+              << "Unique consumed IDs:      " << unique_consumed_ids << "\n"
+              << "Duplicate IDs:            " << duplicate_ids << " (" << duplicate_instances << " duplicate instances)\n"
+              << "Missing IDs:              " << missing_ids << "\n"
+              << "Invalid/out-of-range IDs: " << invalid_ids << "\n"
+              << "Count mismatch:           " << (count_mismatch ? "YES" : "NO") << "\n"
+              << "--------------------------------------------------------------\n";
+
+    bool anomaly = (duplicate_ids > 0) || (missing_ids > 0) || (invalid_ids > 0) || count_mismatch;
+
+    if (anomaly) {
+        std::cout << "UNSAFE ANOMALY DETECTED\n"
+                  << "Explanation: Unsynchronized concurrent access caused race conditions leading to corrupted or dropped packet IDs.\n";
+    } else {
+        std::cout << "No visible anomaly observed in this run.\n"
+                  << "Explanation: The OS thread scheduling timing in this specific run did not produce an observable collision.\n"
+                  << "Recommendation: Increase --iterations (e.g., --iterations 500000 or 1000000) or verify data races with ThreadSanitizer ('make tsan').\n";
+    }
+
+    return 0;
+}
+
+} // namespace
+
+int main(int argc, char* argv[]) {
+    Config cfg;
+    if (!parse_arguments(argc, argv, cfg)) {
+        print_usage(argv[0]);
+        return 1;
+    }
+
+    // Check for modes
+    if (cfg.demo == "rw") {
+        std::cout << "[STUB] Reader-Writer demo (--demo=rw) is not implemented yet (owner: Nidhi)\n";
+        return 77;
+    }
+    if (cfg.demo != "pc") {
+        std::cerr << "Error: invalid --demo mode '" << cfg.demo << "'. Expected 'pc' or 'rw'.\n";
+        return 1;
+    }
+
+    if (cfg.mode == "unsafe") {
+        return run_unsafe_demo(cfg.iterations);
+    }
+    if (cfg.mode != "safe") {
+        std::cerr << "Error: invalid --mode '" << cfg.mode << "'. Expected 'safe' or 'unsafe'.\n";
+        return 1;
+    }
+
+    return run_safe_demo(cfg);
 }
