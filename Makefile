@@ -39,11 +39,23 @@ $(BUILD_DIR)/bankers: $(BUILD_DIR)/bankers.o $(BUILD_DIR)/resource_manager.o
 $(BUILD_DIR)/csv_check: $(BUILD_DIR)/csv_check.o $(BUILD_DIR)/csv_loader.o $(BUILD_DIR)/common.o
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
+$(BUILD_DIR)/test_mem_trace: tests/test_mem_trace.cpp $(BUILD_DIR)/mem_trace.o | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
 tsan: | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -fsanitize=thread -g src/satellite_sync.cpp src/packet_queue.cpp src/csv_loader.cpp src/common.cpp -o $(BUILD_DIR)/satellite_sync_tsan
 
-test: all
+test: all $(BUILD_DIR)/test_mem_trace
+	@mkdir -p outputs
 	@echo "Running tests / self-tests..."
+	@echo "Testing $(BUILD_DIR)/test_mem_trace"; \
+	$(BUILD_DIR)/test_mem_trace; \
+	code=$$?; \
+	if [ $$code -eq 0 ]; then \
+		echo "[PASS] $(BUILD_DIR)/test_mem_trace"; \
+	else \
+		echo "[FAIL] $(BUILD_DIR)/test_mem_trace exited with code $$code"; exit $$code; \
+	fi
 	@for bin in $(BUILD_DIR)/memory_management $(BUILD_DIR)/page_replacement $(BUILD_DIR)/bankers; do \
 		echo "Testing $$bin --selftest"; \
 		$$bin --selftest; \
