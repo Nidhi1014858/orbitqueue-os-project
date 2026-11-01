@@ -4,11 +4,15 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
 #include <mutex>
+#include <pthread.h>
+#include <semaphore.h>
 #include <set>
 #include <sstream>
 #include <string>
@@ -17,7 +21,7 @@
 
 namespace {
 
-// Thread-safe console logging for safe mode
+// Thread-safe console logging
 std::mutex g_log_mutex;
 
 void safe_log(const std::string& msg) {
@@ -509,6 +513,144 @@ int run_unsafe_demo(int iterations) {
     return 0;
 }
 
+// ============================================================================
+// Reader-Writer Implementation (Part A5: Reader Preference)
+// Shared Telemetry State: battery_level, link_quality
+// Synchronization:
+//   - count_mutex (pthread_mutex_t): protects read_count
+//   - write_lock (sem_t, init 1): held by writer, or by first reader on behalf of readers
+// ============================================================================
+
+struct TelemetryState {
+    int battery_level = 100;
+    int link_quality = 90;
+    int update_count = 0;
+};
+
+struct RWContext {
+    pthread_mutex_t count_mutex;
+    sem_t write_lock;
+    int read_count = 0;
+    TelemetryState telemetry;
+};
+
+void rw_reader_thread(const std::string& name, RWContext& ctx, int iterations) {
+    for (int i = 0; i < iterations; ++i) {
+        // Reader entry section
+        pthread_mutex_lock(&ctx.count_mutex);
+        ctx.read_count++;
+        if (ctx.read_count == 1) {
+            // First reader acquires write_lock to block writers
+            while (sem_wait(&ctx.write_lock) != 0) {
+                if (errno == EINTR) continue;
+                std::perror("rw_reader sem_wait write_lock");
+                std::exit(EXIT_FAILURE);
+            }
+        }
+        int active_readers = ctx.read_count;
+        pthread_mutex_unlock(&ctx.count_mutex);
+
+        // Critical section (Reading) - multiple readers execute concurrently
+        int bat = ctx.telemetry.battery_level;
+        int lq = ctx.telemetry.link_quality;
+        int ver = ctx.telemetry.update_count;
+
+        std::ostringstream oss;
+        oss << "[READER:" << name << "] reading telemetry (active readers: " << active_readers
+            << ") -> Battery: " << bat << "%, Link: " << lq << "% (update #" << ver << ")";
+        safe_log(oss.str());
+
+        // Simulated read duration to demonstrate reader overlap
+        std::this_thread::sleep_for(std::chrono::milliseconds(15));
+
+        // Reader exit section
+        pthread_mutex_lock(&ctx.count_mutex);
+        ctx.read_count--;
+        if (ctx.read_count == 0) {
+            // Last reader releases write_lock allowing waiting writers to proceed
+            sem_post(&ctx.write_lock);
+        }
+        pthread_mutex_unlock(&ctx.count_mutex);
+
+        // Delay between successive reads
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+void rw_writer_thread(RWContext& ctx, int iterations) {
+    // Simulated sensor readings
+    const int battery_samples[] = {95, 90, 85, 80, 75};
+    const int link_samples[]    = {88, 72, 65, 80, 92};
+
+    for (int i = 0; i < iterations; ++i) {
+        // Writer entry section - exclusive lock
+        while (sem_wait(&ctx.write_lock) != 0) {
+            if (errno == EINTR) continue;
+            std::perror("rw_writer sem_wait write_lock");
+            std::exit(EXIT_FAILURE);
+        }
+
+        // Critical section (Writing) - writer is alone
+        std::ostringstream oss_start;
+        oss_start << "[WRITER:TelemetrySensor] entered critical section (writer alone, active readers: 0)";
+        safe_log(oss_start.str());
+
+        ctx.telemetry.battery_level = battery_samples[i % 5];
+        ctx.telemetry.link_quality = link_samples[i % 5];
+        ctx.telemetry.update_count++;
+
+        std::ostringstream oss_done;
+        oss_done << "[WRITER:TelemetrySensor] updated telemetry to Battery: "
+                 << ctx.telemetry.battery_level << "%, Link: "
+                 << ctx.telemetry.link_quality << "% (update #" << ctx.telemetry.update_count << ")";
+        safe_log(oss_done.str());
+
+        // Simulated write duration
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+        // Writer exit section
+        sem_post(&ctx.write_lock);
+
+        // Delay between successive sensor updates
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+}
+
+int run_reader_writer_demo() {
+    std::cout << "=== SomaiyaSat Telemetry Synchronization (Exp 7 - Reader-Writer Demo) ===\n"
+              << "Shared state: battery_level, link_quality\n"
+              << "Synchronization: Reader-preference (count_mutex + write_lock semaphore)\n"
+              << "Threads: 1 Writer (TelemetrySensor), 2 Readers (RouterReader, DashboardReader)\n"
+              << "--------------------------------------------------------------------------\n";
+
+    RWContext ctx;
+    pthread_mutex_init(&ctx.count_mutex, nullptr);
+    sem_init(&ctx.write_lock, 0, 1);
+
+    constexpr int WRITER_UPDATES = 5;
+    constexpr int READER_ITERATIONS = 6;
+
+    std::thread t_writer(rw_writer_thread, std::ref(ctx), WRITER_UPDATES);
+    std::thread t_reader1(rw_reader_thread, "RouterReader", std::ref(ctx), READER_ITERATIONS);
+    std::thread t_reader2(rw_reader_thread, "DashboardReader", std::ref(ctx), READER_ITERATIONS);
+
+    t_writer.join();
+    t_reader1.join();
+    t_reader2.join();
+
+    pthread_mutex_destroy(&ctx.count_mutex);
+    sem_destroy(&ctx.write_lock);
+
+    std::cout << "--------------------------------------------------------------------------\n"
+              << "=== Reader-Writer Demonstration Complete ===\n"
+              << "Final telemetry state: Battery " << ctx.telemetry.battery_level
+              << "%, Link " << ctx.telemetry.link_quality
+              << "% (Total updates: " << ctx.telemetry.update_count << ")\n"
+              << "READER-WRITER DEMO PASS\n";
+
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -518,11 +660,19 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Check for modes
+    // Check for demo and mode combinations
     if (cfg.demo == "rw") {
-        std::cout << "[STUB] Reader-Writer demo (--demo=rw) is not implemented yet (owner: Nidhi)\n";
-        return 77;
+        if (cfg.mode == "unsafe") {
+            std::cout << "[STUB] Unsafe Reader-Writer demo (--demo=rw --mode=unsafe) is not implemented yet (owner: Nidhi)\n";
+            return 77;
+        }
+        if (cfg.mode == "safe") {
+            return run_reader_writer_demo();
+        }
+        std::cerr << "Error: invalid --mode '" << cfg.mode << "'. Expected 'safe' or 'unsafe'.\n";
+        return 1;
     }
+
     if (cfg.demo != "pc") {
         std::cerr << "Error: invalid --demo mode '" << cfg.demo << "'. Expected 'pc' or 'rw'.\n";
         return 1;
