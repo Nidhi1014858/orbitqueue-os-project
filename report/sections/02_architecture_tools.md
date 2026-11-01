@@ -82,14 +82,15 @@ The OrbitQueue engineering environment is standardized around open-source Linux 
 In compliance with academic evaluation standards, no fabricated benchmark measurements, compiler versions, or execution outputs are included in this preliminary draft. The exact target platform specifications will be populated directly from the output of `bash scripts/env_check.sh` upon completion of the verification run on the Linux host:
 
 ```
-[To be recorded from Linux verification run via bash scripts/env_check.sh]
-- Operating System & Kernel: outputs/env_check.txt (uname -a, /etc/os-release)
-- Compiler Version: g++ --version
-- Build Tool Version: make --version
-- Python Environment: python3 --version, pip list
-- CPU & Hardware Concurrency: nproc, lscpu
-- Memory Capacity: free -h
-- Storage Allocation: df -h
+[Recorded from Linux verification run via bash scripts/env_check.sh]
+- Operating System: Ubuntu 26.04 LTS (Resolute Raccoon), Linux 7.0.0-28-generic x86_64
+- Host Virtualization: Linux VirtualBox Guest (Ubuntu PREEMPT_DYNAMIC)
+- Compiler Version: g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+- Build Tool Version: GNU Make 4.4.1 (x86_64-pc-linux-gnu)
+- Python Environment: Python 3.14.4
+- Hardware Concurrency: 4 cores (nproc = 4)
+- System Memory: 4.8 GiB total (3.7 GiB available)
+- Root Storage Allocation: /dev/sda3, 10 GB total (2.6 GB available)
 ```
 
 ---
