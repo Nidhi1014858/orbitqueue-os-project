@@ -35,4 +35,4 @@ The ML action is advisory. The integrated router keeps critical TT&C and HOUSEKE
 
 ## 9.5 AI acknowledgement
 
-AI tools were used to help plan the project, review experiment answers, and draft code structure. All code must be run, tested, and verified by the team on Linux before submission, and every member is responsible for understanding and explaining the work. AI-generated text and code were reviewed against the project interfaces; no execution output, metric, or screenshot is claimed without a real run.
+AI tools were used to help plan the project, review experiment answers, and draft code structure. Surbhi's loaders, ML scripts, and Banker's Algorithm components were built and tested in an Ubuntu VM; other team-owned components must still be verified by their owners before submission. Every member is responsible for understanding and explaining the work. AI-generated text and code were reviewed against the project interfaces; no execution output, metric, or screenshot is claimed without a real run.

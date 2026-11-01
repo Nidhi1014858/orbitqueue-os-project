@@ -24,7 +24,7 @@ Linux evidence commands:
 ./build/csv_check data/does_not_exist.csv
 ```
 
-The first command should report zero rejected rows. The invalid file contains one valid row and six deliberate faults: unknown type, battery 140, negative size, empty field, duplicate identifier, and non-numeric urgency. Actual Linux output must be saved in `outputs/data_validation.txt`; it is not reproduced here until the team runs it.
+The Linux run recorded in `outputs/data_validation.txt` reported 60 valid and 0 rejected rows for the valid file. The invalid file contains one valid row and six deliberate faults—unknown type, battery 140, negative size, empty field, duplicate identifier, and non-numeric urgency—and the loader reported 1 valid and 6 rejected rows. The missing-file case printed a clear error and exited with status 1.
 
 ## 3.3 Label creation
 
@@ -51,9 +51,9 @@ python3 ml/train_router.py --train data/training_scenarios.csv \
 
 ## 3.5 Baseline comparison and interpretation
 
-The baseline uses a small hand-written set of battery, link, urgency and size thresholds. The training program evaluates it on exactly the same held-out rows as the tree. Real measurements from `outputs/ml_metrics.txt` must be inserted after the Linux run; no accuracy is claimed in this draft.
+The baseline uses a small hand-written set of battery, link, urgency and size thresholds. The training program evaluates it on exactly the same held-out rows as the tree. In the Linux run with seed 42, the model trained on 480 rows and was evaluated on 120 rows. The decision tree accuracy was 0.8417, while the baseline accuracy was 0.8750. The baseline therefore performed better on this particular synthetic split; the result is reported rather than hidden. Per-class metrics, the confusion matrix, and feature importance are preserved in `outputs/ml_metrics.txt`.
 
-Even if the decision tree outperforms the baseline, the labels come from a synthetic policy. Accuracy therefore shows only that the tree can approximate that policy. It does not establish reliability on real satellite traffic.
+Both methods were evaluated against labels created by a synthetic policy. Their accuracy therefore measures only how closely they reproduce that policy on the held-out synthetic rows. It does not establish reliability on real satellite traffic.
 
 ## 3.6 Connection to the router
 

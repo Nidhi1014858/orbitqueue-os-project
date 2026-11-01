@@ -1,0 +1,11 @@
+[valid CSV]
+valid=60 rejected=0
+rejection_log=logs/rejected_rows.log
+exit=0
+[malformed rows CSV]
+valid=1 rejected=6
+rejection_log=logs/rejected_rows.log
+exit=0
+[missing CSV]
+Error: cannot open packets CSV: data/does_not_exist.csv
+exit=1
