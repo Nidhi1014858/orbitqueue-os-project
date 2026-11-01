@@ -51,7 +51,7 @@ Use-case link: this is the input of the whole simulation. All data is synthetic 
 - [x] `ml/requirements.txt` (scikit-learn, pandas, numpy) and install instructions in the README section I own.
 - [x] Be honest in the report: labels come from a synthetic policy, so accuracy shows the model can learn that policy, not that it works on real satellite traffic. State why a decision tree was chosen (small, explainable, no heavy hardware).
 - [x] The safety override lives in Nidhi's router, not in the model. Describe how the two fit together.
-- [ ] Do not call the ML part complete until it is trained, tested and connected to the router.
+- [x] Do not call the ML part complete until it is trained, tested and connected to the router.
 
 ## Part C. Experiment 9: Banker's Algorithm (`resource_manager.*` and `bankers.cpp`)
 
@@ -81,7 +81,7 @@ Use-case link: tasks T0 to T4 ask for CPU slots (A), buffer units (B) and transm
 
 ### Evidence and report
 - [x] `./build/bankers --scenario all | tee outputs/exp9_scenarios.txt` and `./build/bankers --selftest | tee outputs/exp9_selftest.txt`
-- [ ] Human takes screenshots into `screenshots/exp9_*.png`.
+- [x] Human takes screenshots into `screenshots/exp9_*.png`.
 - [ ] Report `06_exp9.md` in lab format. Post-lab: you already have the prevention, avoidance, detection and recovery table in the satellite context. Make it concrete by naming the transmitter slot and buffer units in each row. Fix the Outcomes field (the lab file text about OS structure and I/O does not match this experiment, take the CO wording from your syllabus).
 
 ---
@@ -103,7 +103,7 @@ Use-case link: tasks T0 to T4 ask for CPU slots (A), buffer units (B) and transm
 ## My definition of done
 
 - [x] Loaders reject bad rows and the model beats or honestly compares with the baseline.
-- [ ] `outputs/decisions.csv` is produced and the router reads it.
+- [x] `outputs/decisions.csv` is produced and the router reads it.
 - [x] Exp 9 shows a safe state, an unsafe state, a denied request and an invalid input.
 - [ ] My three report sections are complete and the final report PDF is assembled.
 - [ ] I can explain: unsafe state versus deadlock, why a request is denied, what Need means, why a decision tree, what label noise does, why synthetic accuracy is limited evidence.
