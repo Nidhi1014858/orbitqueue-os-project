@@ -74,4 +74,3 @@
 |   |   |   |   |   |--- class: DEFER
 |   |   |   |   |--- numbers__urgency >  3.50
 |   |   |   |   |   |--- class: TRANSMIT
-
