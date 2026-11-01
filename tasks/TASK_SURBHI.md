@@ -11,7 +11,8 @@ Read `docs/PROJECT_BRIEF.md` and `docs/INTERFACES.md` first.
 
 - You are helping Surbhi. Work through the tasks below in order.
 - Edit only the files listed under "My files". If something needs to change in another owner's file, stop and tell the human to ask that person.
-- Build and test on Linux (WSL or the Ubuntu VM) only. If you are running on native Windows, stop and tell the human.
+- You may write and edit code on Windows. Building, testing, evidence, and completion claims are Linux-only (WSL or the Ubuntu VM). On Windows, never claim the code builds or passes; leave every checkbox unchecked until the human runs it on Linux and pastes the real output.
+- Write all text and source files with LF line endings.
 - Never invent output, screenshots or measurements. Run the command, save the real output with `tee` into `outputs/`.
 - Keep code simple and well commented so Surbhi can explain every line in the viva. No clever abstractions.
 - Commit to a branch named `surbhi/<topic>` and open a Pull Request. Do not push to `main`.
