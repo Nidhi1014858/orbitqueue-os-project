@@ -1,0 +1,26 @@
+======================================================================
+  Running Experiment 10 Verification Self-Test (Hand-Verified Values)
+======================================================================
+
+--- 1. Reference String: 7 0 1 2 0 3 0 4 2 3 0 3 (1 Frame) ---
+[PASS] FIFO 1 frame (Faults: 12, Hits: 0)
+[PASS] LRU 1 frame (Faults: 12, Hits: 0)
+[PASS] Optimal 1 frame (Faults: 12, Hits: 0)
+
+--- 2. Reference String: 7 0 1 2 0 3 0 4 2 3 0 3 (3 Frames) ---
+[PASS] FIFO 3 frames (Faults: 10, Hits: 2)
+[PASS] LRU 3 frames (Faults: 9, Hits: 3)
+[PASS] Optimal 3 frames (Corrected: 7 faults, 5 hits) (Faults: 7, Hits: 5)
+
+--- 3. Reference String: 7 0 1 2 0 3 0 4 2 3 0 3 (4 Frames) ---
+[PASS] FIFO 4 frames (Faults: 7, Hits: 5)
+[PASS] LRU 4 frames (Faults: 6, Hits: 6)
+[PASS] Optimal 4 frames (Faults: 6, Hits: 6)
+
+--- 4. Belady's Anomaly Verification (String: 1 2 3 4 1 2 5 1 2 3 4 5) ---
+[PASS] Belady FIFO 3 frames: exactly 9 faults
+[PASS] Belady FIFO 4 frames: exactly 10 faults
+[PASS] Belady's Anomaly confirmed: faults increased from 9 to 10 when frames increased from 3 to 4
+
+======================================================================
+SELF-TEST RESULT: ALL TESTS PASSED
