@@ -6,20 +6,28 @@ echo "=========================================="
 echo "    OrbitQueue: Full Simulation Pipeline   "
 echo "=========================================="
 
-mkdir -p outputs logs
+LOG_DIR="outputs/logs"
+mkdir -p outputs "$LOG_DIR"
 
 PASSED=0
 SKIPPED=0
 FAILED=0
+STEP_COUNT=0
 
 run_step() {
     local desc="$1"
     shift
+    STEP_COUNT=$((STEP_COUNT + 1))
+    local log_slug
+    log_slug=$(echo "$desc" | tr -cs 'a-zA-Z0-9_' '_' | tr '[:upper:]' '[:lower:]' | sed 's/^_//;s/_$//')
+    local log_file="${LOG_DIR}/step_${STEP_COUNT}_${log_slug}.log"
+
     echo -n "[RUN] $desc ... "
     set +e
-    "$@" > /dev/null 2>&1
+    "$@" > "$log_file" 2>&1
     local code=$?
     set -u
+
     if [ "$code" -eq 0 ]; then
         echo "PASS"
         PASSED=$((PASSED + 1))
@@ -29,6 +37,14 @@ run_step() {
     else
         echo "FAIL (exit code $code)"
         FAILED=$((FAILED + 1))
+        echo "       Log saved to: $log_file"
+        echo "       --- Captured Output (stderr/stdout) ---"
+        if [ -s "$log_file" ]; then
+            sed 's/^/       | /' "$log_file"
+        else
+            echo "       | (No output captured; command exited with code $code)"
+        fi
+        echo "       ---------------------------------------"
     fi
 }
 

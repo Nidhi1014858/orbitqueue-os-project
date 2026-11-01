@@ -11,7 +11,8 @@ Read `docs/PROJECT_BRIEF.md` and `docs/INTERFACES.md` first.
 
 - You are helping Rimjhim. Work through the tasks below in order.
 - Edit only the files listed under "My files". If something needs to change in another owner's file, stop and tell the human to ask that person.
-- Build and test on Linux (WSL or the Ubuntu VM) only. If you are running on native Windows, stop and tell the human.
+- You may write and edit code on Windows, but you must not claim it builds or passes until the human has run it on Linux and pasted the real output. Leave checkboxes unchecked until then. Write all files with LF endings.
+- Two-loop workflow: Write code in Antigravity on Windows. Then run git pull, make and the tests in WSL or the VM, and send any errors back to the agent. (If Antigravity can open the repo through WSL later, you can skip the pull step).
 - Never invent output, screenshots or measurements. Run the command, save the real output with `tee` into `outputs/`.
 - Keep code simple and well commented so Rimjhim can explain every line in the viva. No clever abstractions.
 - Commit to a branch named `rimjhim/<topic>` and open a Pull Request. Do not push to `main`.

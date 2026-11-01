@@ -1,0 +1,30 @@
+========================================================
+  Running Experiment 8 and mem_trace Verification Self-Test
+========================================================
+
+--- 1. Paging Expected Cases ---
+[PASS] P 1 25 -> Frame 2, Physical 225
+[PASS] P 3 99 -> Frame 5, Physical 599
+[PASS] P 2 20 -> PAGE FAULT
+[PASS] P 9 5 -> Invalid page number
+[PASS] P 4 100 -> Invalid offset (>=100)
+[PASS] P 4 -3 -> Invalid offset (<0)
+
+--- 2. Segmentation Expected Cases ---
+[PASS] S 1 150 -> Physical 2150
+[PASS] S 2 299 -> Physical 3299
+[PASS] S 2 300 -> SEGMENTATION VIOLATION
+[PASS] S 2 450 -> SEGMENTATION VIOLATION
+[PASS] S 7 0 -> Invalid segment number
+[PASS] S 4 199 -> Physical 5199
+[PASS] S 4 200 -> SEGMENTATION VIOLATION
+[PASS] S 0 -5 -> Invalid offset (<0)
+
+--- 3. Memory Trace Mapping and Region Checks ---
+[PASS] memtrace region definitions (CODE 0-1, MODEL 2-3, INPUT 4-5, LOG 6, STACK 7)
+[PASS] memtrace page_of mapping calculations
+[PASS] memtrace negative offset handling
+[PASS] memtrace huge offset wrapping
+
+========================================================
+SELF-TEST RESULT: ALL TESTS PASSED

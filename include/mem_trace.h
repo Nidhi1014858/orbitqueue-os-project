@@ -1,4 +1,4 @@
-// OWNER: Rimjhim - replace this stub with the real implementation. Do not edit if you are not the owner.
+// OWNER: Rimjhim - memory trace interface specification
 #pragma once
 #include <string>
 

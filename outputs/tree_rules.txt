@@ -1,0 +1,76 @@
+|--- numbers__urgency <= 2.50
+|   |--- numbers__battery_level <= 43.50
+|   |   |--- numbers__battery_level <= 17.50
+|   |   |   |--- numbers__link_quality <= 16.50
+|   |   |   |   |--- class: DEFER
+|   |   |   |--- numbers__link_quality >  16.50
+|   |   |   |   |--- numbers__data_size <= 759386.50
+|   |   |   |   |   |--- class: REJECT
+|   |   |   |   |--- numbers__data_size >  759386.50
+|   |   |   |   |   |--- class: REJECT
+|   |   |--- numbers__battery_level >  17.50
+|   |   |   |--- numbers__link_quality <= 24.50
+|   |   |   |   |--- class: REJECT
+|   |   |   |--- numbers__link_quality >  24.50
+|   |   |   |   |--- numbers__battery_level <= 31.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |   |   |--- numbers__battery_level >  31.50
+|   |   |   |   |   |--- class: REJECT
+|   |--- numbers__battery_level >  43.50
+|   |   |--- numbers__link_quality <= 54.50
+|   |   |   |--- numbers__link_quality <= 23.50
+|   |   |   |   |--- numbers__data_size <= 844133.50
+|   |   |   |   |   |--- class: REJECT
+|   |   |   |   |--- numbers__data_size >  844133.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |   |--- numbers__link_quality >  23.50
+|   |   |   |   |--- numbers__link_quality <= 41.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |   |   |--- numbers__link_quality >  41.50
+|   |   |   |   |   |--- class: REJECT
+|   |   |--- numbers__link_quality >  54.50
+|   |   |   |--- numbers__data_size <= 651022.00
+|   |   |   |   |--- numbers__battery_level <= 46.00
+|   |   |   |   |   |--- class: TRANSMIT
+|   |   |   |   |--- numbers__battery_level >  46.00
+|   |   |   |   |   |--- class: TRANSMIT
+|   |   |   |--- numbers__data_size >  651022.00
+|   |   |   |   |--- type__type_TT&C <= 0.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |   |   |--- type__type_TT&C >  0.50
+|   |   |   |   |   |--- class: DEFER
+|--- numbers__urgency >  2.50
+|   |--- numbers__battery_level <= 31.50
+|   |   |--- numbers__link_quality <= 16.50
+|   |   |   |--- type__type_SSTV <= 0.50
+|   |   |   |   |--- class: DEFER
+|   |   |   |--- type__type_SSTV >  0.50
+|   |   |   |   |--- class: TRANSMIT
+|   |   |--- numbers__link_quality >  16.50
+|   |   |   |--- numbers__urgency <= 3.50
+|   |   |   |   |--- type__type_VOICE <= 0.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |   |   |--- type__type_VOICE >  0.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |   |--- numbers__urgency >  3.50
+|   |   |   |   |--- class: DEFER
+|   |--- numbers__battery_level >  31.50
+|   |   |--- numbers__link_quality <= 41.50
+|   |   |   |--- numbers__data_size <= 26721.50
+|   |   |   |   |--- class: TRANSMIT
+|   |   |   |--- numbers__data_size >  26721.50
+|   |   |   |   |--- numbers__link_quality <= 11.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |   |   |--- numbers__link_quality >  11.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |--- numbers__link_quality >  41.50
+|   |   |   |--- numbers__data_size <= 638295.00
+|   |   |   |   |--- numbers__battery_level <= 62.50
+|   |   |   |   |   |--- class: TRANSMIT
+|   |   |   |   |--- numbers__battery_level >  62.50
+|   |   |   |   |   |--- class: TRANSMIT
+|   |   |   |--- numbers__data_size >  638295.00
+|   |   |   |   |--- numbers__urgency <= 3.50
+|   |   |   |   |   |--- class: DEFER
+|   |   |   |   |--- numbers__urgency >  3.50
+|   |   |   |   |   |--- class: TRANSMIT
