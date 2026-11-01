@@ -93,9 +93,9 @@ make test
 
 | Component | Owner | Target / Binary | Status |
 |---|---|---|---|
-| **Packet Queue** | Nidhi | `src/packet_queue.cpp` | stub, NOT yet built or tested on Linux |
-| **Exp 7 Synchronization** | Nidhi | `build/satellite_sync` | stub, NOT yet built or tested on Linux |
-| **Integrated Router App** | Nidhi | `build/router_app` | stub, NOT yet built or tested on Linux |
+| **Packet Queue** | Nidhi | `src/packet_queue.cpp` | Complete & verified on Linux (mutex + 3 semaphores, critical headroom) |
+| **Exp 7 Synchronization** | Nidhi | `build/satellite_sync` | Complete & verified on Linux (safe/unsafe PC, Reader-Writer demo) |
+| **Integrated Router App** | Nidhi | `build/router_app` | Complete & verified on Linux (safety override, Banker's check, mem trace) |
 | **Memory Trace Module** | Rimjhim | `src/mem_trace.cpp` | stub, NOT yet built or tested on Linux |
 | **Exp 8 Memory Management** | Rimjhim | `build/memory_management` | stub, NOT yet built or tested on Linux |
 | **Exp 10 Page Replacement** | Rimjhim | `build/page_replacement` | stub, NOT yet built or tested on Linux |
