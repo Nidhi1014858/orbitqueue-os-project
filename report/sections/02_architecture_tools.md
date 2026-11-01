@@ -59,7 +59,22 @@ OrbitQueue resolves multiple classical concurrency challenges through layered PO
   - `pthread_mutex_t count_mutex`: Protects the shared `read_count` integer.
   - `sem_t write_lock` (initialized to 1): Mutual exclusion lock for the telemetry state.
   - The first reader to arrive acquires `write_lock` to block writers; the last reader to leave releases `write_lock`. The writer acquires `write_lock` exclusively.
-  - All console logging is assembled into an isolated string stream before locking `g_log_mutex`, preventing garbled or interleaved terminal output.
+### 4. End-to-End Integrated Router Dispatch Verification
+The complete downlink router pipeline (`./build/router_app`) was executed on Ubuntu Linux processing 60 input packets and ML decisions with 2 concurrent worker threads:
+
+![Integrated Router Execution Part 1](../../screenshots/router_app_execution_part1.png)
+
+![Integrated Router Execution Part 2](../../screenshots/router_app_execution_part2.png)
+
+#### Execution Results and Operational Insights:
+- **Safety Overrides Verified (22 Occurrences):** Telemetry packets (TT&C and HOUSEKEEPING) where ML predicted `DEFER` or `REJECT` were immediately rescued by the hardcoded deterministic safety policy and dispatched as `TRANSMIT (reason: SAFETY_OVERRIDE)`.
+- **Resource Management Integration (Exp 9):** Non-critical VOICE and SSTV packets encountering saturated buffer/transmitter resources were safely deferred (`DEFER (reason: RESOURCE_DENIED)`), preventing potential deadlock conditions.
+- **Performance Summary:**
+  - Total packets processed: 60 (33 Telemetry, 27 Payload).
+  - 35 Transmitted, 24 Deferred, 1 Rejected.
+  - Queue maximum depth reached: 8 / 8 (operating at peak bounded capacity without overflow).
+  - Processing runtime: 100 ms (Throughput: 600.00 packets/s).
+  - Output artifacts generated: `outputs/routing_log.csv` and deterministic trace `outputs/page_trace.txt`.
 
 ---
 
