@@ -1,0 +1,94 @@
+%% OrbitQueue: SomaiyaSat Downlink Router Architecture
+%% OWNER: Nidhi
+%% Flowchart illustrating the end-to-end integration of OS Experiments 7, 8, 9, and 10
+
+flowchart TD
+    %% Educational Model Disclaimer Note
+    ModelNote["Note: Synthetic Teaching Model - All satellite data, packets, and resource figures are simulated for OS education"]
+
+    subgraph DataGen ["1. Synthetic Data & ML Decision Generation"]
+        CSV_Packets["data/satellite_data.csv<br/>(Telemetry & Payload Packets)"]
+        CSV_Train["data/training_scenarios.csv<br/>(Training Scenarios)"]
+        ML_Model["ML & Baseline Router<br/>(ml/train_router.py / baseline.py)"]
+        CSV_Decisions["outputs/decisions.csv<br/>(Action Recommendations: TRANSMIT / DEFER / REJECT)"]
+
+        CSV_Train --> ML_Model
+        ML_Model --> CSV_Decisions
+    end
+
+    subgraph Exp7 ["2. Experiment 7: Concurrency & Bounded Priority Queue"]
+        CSV_Packets --> CSV_Loader["csv_loader.cpp<br/>(load_packets validation)"]
+        CSV_Loader --> Prod_TTC["TelemetryProducer Thread<br/>(TT&C, HOUSEKEEPING)"]
+        CSV_Loader --> Prod_Bulk["PayloadProducer Thread<br/>(SSTV, VOICE)"]
+
+        subgraph Queue ["PacketQueue: Bounded Priority Buffer (Capacity 8)"]
+            Sem_Bulk["sem_bulk Semaphore<br/>(Limits bulk packets to 6 slots; 2 reserved for critical)"]
+            Sem_Empty["sem_empty Semaphore<br/>(Tracks vacant slots: init 8)"]
+            Sem_Full["sem_full Semaphore<br/>(Tracks populated slots: init 0)"]
+            Queue_Mutex["queue_mutex<br/>(Protects buffer vector & stats)"]
+        end
+
+        Prod_TTC -->|"Bypass bulk limit<br/>sem_wait(sem_empty)"| Queue_Mutex
+        Prod_Bulk -->|"sem_wait(sem_bulk)<br/>sem_wait(sem_empty)"| Queue_Mutex
+
+        Queue_Mutex --> Workers["Router Worker Threads (--workers N)<br/>(Priority Dequeue: TT&C > HK > VOICE > SSTV)"]
+    end
+
+    subgraph RouterEngine ["3. Integrated Router Pipeline & Safety Engine"]
+        Workers --> Decision_Lookup{"Decision Lookup<br/>(in decisions.csv)"}
+        CSV_Decisions -.-> Decision_Lookup
+        Decision_Lookup -->|"Found"| Policy_Action["Model Decision<br/>(Source: ML / BASELINE)"]
+        Decision_Lookup -->|"Missing"| Fallback["Deterministic Fallback<br/>(Source: FALLBACK)"]
+
+        Policy_Action --> Safety_Check{"Is Critical Packet?<br/>(TT&C / HOUSEKEEPING)"}
+        Fallback --> Safety_Check
+
+        Safety_Check -->|"Critical & Action != TRANSMIT"| Safety_Override["Safety Override<br/>(Forced TRANSMIT, Reason: SAFETY_OVERRIDE)"]
+        Safety_Check -->|"Non-Critical or TRANSMIT"| Candidate_Decision["Candidate Decision"]
+        Safety_Override --> Candidate_Decision
+    end
+
+    subgraph Exp9 ["4. Experiment 9: Banker's Deadlock Avoidance"]
+        Candidate_Decision --> RM_Req["rm::request() Resource Check<br/>(Ordered Task Stages)"]
+
+        subgraph Resources ["System Resource Pool (Abstract Units)"]
+            Res_A["Resource A: CPU Slots<br/>(T0 Telemetry / T2 SSTV / T3 Voice)"]
+            Res_B["Resource B: Buffer Units<br/>(T1 PacketRouter)"]
+            Res_C["Resource C: Transmitter Slots<br/>(T4 DownlinkPrep on TRANSMIT)"]
+        end
+
+        RM_Req <--> Resources
+        RM_Req --> RM_Eval{"Banker's Safety<br/>Evaluation"}
+        RM_Eval -->|"GRANTED"| Action_Approved["Resources Granted<br/>(Simulated hold & rm::release)"]
+        RM_Eval -->|"WAIT (Backoff Retry)"| RM_Req
+        RM_Eval -->|"DENIED_UNSAFE (Non-Critical)"| Defer_Resource["Forced DEFER<br/>(Reason: RESOURCE_DENIED)"]
+        RM_Eval -->|"DENIED_UNSAFE (Critical)"| RM_Req
+    end
+
+    subgraph TraceMem ["5. Memory Access Tracing & Virtual Memory Pipeline"]
+        Action_Approved --> Trace_Log["mem_trace::access()<br/>(9 Ordered Logical Accesses per Packet)"]
+        Defer_Resource --> Trace_Log
+
+        subgraph Regions ["Memory Regions (8 Logical Pages, 100B each)"]
+            Reg_Code["CODE: Pages 0, 1"]
+            Reg_Model["MODEL_PARAMS: Pages 2, 3"]
+            Reg_In["INPUT_BUFFER: Pages 4, 5 (Virtual Slots)"]
+            Reg_Out["OUTPUT_LOG: Page 6 (Rolling Slots)"]
+            Reg_Stack["STACK: Page 7 (Worker Frames)"]
+        end
+
+        Trace_Log -.-> Regions
+        Trace_Log --> Trace_File["outputs/page_trace.txt<br/>(Sequential Page Reference String)"]
+
+        Trace_File --> Exp8["Experiment 8: memory_management<br/>(Paging & Segmentation Address Translation)"]
+        Trace_File --> Exp10["Experiment 10: page_replacement<br/>(FIFO, LRU, Optimal Algorithms)"]
+    end
+
+    subgraph Outputs ["6. Outputs & Ground Station Telemetry"]
+        Action_Approved --> Dispatch["Downlink Dispatcher"]
+        Defer_Resource --> Dispatch
+
+        Dispatch --> Log_CSV["outputs/routing_log.csv<br/>(packet_id, type, decision, source, final_action, reason, resource_result, timestamp_ms)"]
+        Dispatch --> Summary_TXT["outputs/router_summary.txt<br/>(Processed, Transmitted, Deferred, Overrides, Max Depth, Throughput)"]
+        Dispatch --> GS_Console["Ground-Station Console<br/>([GS] packet ID -> TRANSMITTED / DEFERRED / REJECTED)"]
+    end
