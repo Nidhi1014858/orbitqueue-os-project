@@ -1,0 +1,9 @@
+# Synthetic educational data; not SomaiyaSat telemetry.
+packet_id,type,urgency,link_quality,battery_level,data_size
+1,TT&C,5,80,70,900
+2,XYZ,3,70,60,2000
+3,VOICE,4,75,140,12000
+4,SSTV,2,65,55,-10
+5,HOUSEKEEPING,3,,50,3000
+1,VOICE,2,60,45,8000
+7,VOICE,urgent,60,45,8000
