@@ -1,0 +1,108 @@
+=== Running Test Cases from data/addr_tests.txt ===
+======================================================================
+  OrbitQueue Memory Management Tables (Teaching Simulation Model)
+  Note: All values and limits are synthetic teaching examples.
+======================================================================
+
+--- Page Table (Page Size: 100 bytes, Total Pages: 8) ---
+Page    Frame     Region          Description / Status
+--------------------------------------------------------------------
+0       4         CODE            Executable instruction memory (part 1)
+1       2         CODE            Executable instruction memory (part 2)
+2       -1 (Fault)MODEL_PARAMS    ML weights and parameters (absent, PAGE FAULT)
+3       5         MODEL_PARAMS    ML weights and parameters (part 2)
+4       7         INPUT_BUFFER    Downlink packet staging buffer (part 1)
+5       1         INPUT_BUFFER    Downlink packet staging buffer (part 2)
+6       6         OUTPUT_LOG      Routing log and telemetry buffer
+7       0         STACK           Call stack and local frames
+
+--- Segment Table (Total Segments: 5) ---
+Segment   Name            Base      Limit     Description
+--------------------------------------------------------------------
+0         CODE            1000      400       Executable instructions
+1         MODEL_PARAMS    2000      600       ML model weights and parameters
+2         INPUT_BUFFER    3000      300       Staging buffer for incoming downlink chunks
+3         OUTPUT_LOG      4000      500       Telemetry and routing logs
+4         STACK           5000      200       Execution stack frames
+======================================================================
+
+[PAGING TRANSLATION] Input Logical Address: (Page: 1, Offset: 25)
+  Step 1: Page Lookup -> Page 1 belongs to region CODE
+  Step 2: Table Lookup -> Page 1 maps to Frame 2
+  Step 3: Physical Address Calculation
+          physical = frame x page_size + offset
+                   = 2 x 100 + 25
+                   = 200 + 25
+                   = 225
+  -> RESULT: Frame 2, Physical Address 225
+
+[PAGING TRANSLATION] Input Logical Address: (Page: 3, Offset: 99)
+  Step 1: Page Lookup -> Page 3 belongs to region MODEL_PARAMS
+  Step 2: Table Lookup -> Page 3 maps to Frame 5
+  Step 3: Physical Address Calculation
+          physical = frame x page_size + offset
+                   = 5 x 100 + 99
+                   = 500 + 99
+                   = 599
+  -> RESULT: Frame 5, Physical Address 599
+
+[PAGING TRANSLATION] Input Logical Address: (Page: 2, Offset: 20)
+  Step 1: Page Lookup -> Page 2 belongs to region MODEL_PARAMS
+  Step 2: Table Lookup -> Page 2 maps to Frame -1
+  -> PAGE FAULT: Page 2 (MODEL_PARAMS) is absent from memory (not loaded yet).
+
+[PAGING TRANSLATION] Input Logical Address: (Page: 9, Offset: 5)
+  -> ERROR: Invalid page number 9 (valid range: 0 to 7).
+
+[PAGING TRANSLATION] Input Logical Address: (Page: 4, Offset: 100)
+  -> ERROR: Invalid offset 100 (valid range: 0 to 99 for page size 100).
+
+[PAGING TRANSLATION] Input Logical Address: (Page: 4, Offset: -3)
+  -> ERROR: Invalid offset -3 (valid range: 0 to 99 for page size 100).
+
+[SEGMENTATION TRANSLATION] Input Logical Address: (Segment: 1, Offset: 150)
+  Step 1: Segment Lookup -> Segment 1 (MODEL_PARAMS)
+          Base = 2000, Limit = 600
+  Step 2: Boundary Check -> check if offset (150) < limit (600)
+  Step 3: Physical Address Calculation
+          physical = base + offset
+                   = 2000 + 150
+                   = 2150
+  -> RESULT: Physical Address 2150
+
+[SEGMENTATION TRANSLATION] Input Logical Address: (Segment: 2, Offset: 299)
+  Step 1: Segment Lookup -> Segment 2 (INPUT_BUFFER)
+          Base = 3000, Limit = 300
+  Step 2: Boundary Check -> check if offset (299) < limit (300)
+  Step 3: Physical Address Calculation
+          physical = base + offset
+                   = 3000 + 299
+                   = 3299
+  -> RESULT: Physical Address 3299
+
+[SEGMENTATION TRANSLATION] Input Logical Address: (Segment: 2, Offset: 300)
+  Step 1: Segment Lookup -> Segment 2 (INPUT_BUFFER)
+          Base = 3000, Limit = 300
+  Step 2: Boundary Check -> check if offset (300) < limit (300)
+  -> SEGMENTATION VIOLATION: Offset 300 exceeds or equals limit 300 for segment 2 (INPUT_BUFFER).
+
+[SEGMENTATION TRANSLATION] Input Logical Address: (Segment: 2, Offset: 450)
+  Step 1: Segment Lookup -> Segment 2 (INPUT_BUFFER)
+          Base = 3000, Limit = 300
+  Step 2: Boundary Check -> check if offset (450) < limit (300)
+  -> SEGMENTATION VIOLATION: Offset 450 exceeds or equals limit 300 for segment 2 (INPUT_BUFFER).
+
+[SEGMENTATION TRANSLATION] Input Logical Address: (Segment: 7, Offset: 0)
+  -> ERROR: Invalid segment number 7 (valid range: 0 to 4).
+
+[SEGMENTATION TRANSLATION] Input Logical Address: (Segment: 4, Offset: 199)
+  Step 1: Segment Lookup -> Segment 4 (STACK)
+          Base = 5000, Limit = 200
+  Step 2: Boundary Check -> check if offset (199) < limit (200)
+  Step 3: Physical Address Calculation
+          physical = base + offset
+                   = 5000 + 199
+                   = 5199
+  -> RESULT: Physical Address 5199
+
+=== Test File Execution Finished ===
