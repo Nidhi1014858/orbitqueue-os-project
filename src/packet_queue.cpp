@@ -39,7 +39,7 @@ static bool trywait_sem_or_die(sem_t* sem, const char* msg) {
 PacketQueue::PacketQueue(int capacity, int reserved_for_critical)
     : capacity_(capacity > 0 ? capacity : 8),
       reserved_for_critical_(0),
-      stats_{0, 0, 0} {
+      stats_{0, 0, 0, 0} {
     // Clamp reserved_for_critical_ strictly within [0, capacity_]
     // Handles custom inputs such as PacketQueue(1, 2) -> 1, PacketQueue(1, -1) -> 0, PacketQueue(8, 99) -> 8
     reserved_for_critical_ = std::max(0, std::min(reserved_for_critical, capacity_));
@@ -96,9 +96,10 @@ void PacketQueue::push(const Packet& p) {
     }
 
     buffer_.push_back(p);
-    int current_depth = static_cast<int>(buffer_.size());
-    if (current_depth > stats_.max_depth) {
-        stats_.max_depth = current_depth;
+    int cur_depth = static_cast<int>(buffer_.size());
+    stats_.current_depth = cur_depth;
+    if (cur_depth > stats_.max_depth) {
+        stats_.max_depth = cur_depth;
     }
 
     pthread_mutex_unlock(&mutex_);
@@ -139,6 +140,7 @@ Packet PacketQueue::pop() {
 
     Packet chosen = buffer_[best_idx];
     buffer_.erase(buffer_.begin() + best_idx);
+    stats_.current_depth = static_cast<int>(buffer_.size());
 
     bool was_bulk = !is_critical(chosen.type);
 
@@ -157,6 +159,7 @@ Packet PacketQueue::pop() {
 PacketQueue::Stats PacketQueue::stats() const {
     pthread_mutex_lock(&mutex_);
     Stats snapshot = stats_;
+    snapshot.current_depth = static_cast<int>(buffer_.size());
     pthread_mutex_unlock(&mutex_);
     return snapshot;
 }

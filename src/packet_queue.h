@@ -16,6 +16,7 @@
 class PacketQueue {
 public:
     struct Stats {
+        int current_depth;
         int max_depth;
         long blocked_full;
         long blocked_empty;
